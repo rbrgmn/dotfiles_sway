@@ -1,0 +1,9 @@
+#    DATE: 2023-11-28
+#  AUTHOR: RBRGMN <roman.bergman@tutanota.com>
+# LICENSE: AGPL3.0
+
+#
+# INCLUDE
+#
+
+include ${HOME}/.config/sway/sway.d/*.conf
