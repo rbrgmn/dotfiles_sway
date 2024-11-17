@@ -22,7 +22,7 @@ jobs:
       # Install Sway
       - name: Install Sway
         run: |
-          apk add --no-cache sway
+          apk add --no-cache bash sway
       
       # Validate config
       - name: Validate config
