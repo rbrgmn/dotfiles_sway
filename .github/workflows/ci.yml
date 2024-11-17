@@ -11,8 +11,6 @@ on:
 jobs:
   validate-config:
     runs-on: ubuntu-latest
-    container:
-      image: alpine:latest
 
     steps:
       # Checkout the repository
@@ -22,7 +20,8 @@ jobs:
       # Install Sway
       - name: Install Sway
         run: |
-          apk add --no-cache bash sway
+          apt update
+          apt install sway -y
       
       # Validate config
       - name: Validate config
