@@ -18,11 +18,11 @@ jobs:
         uses: actions/checkout@v3
 
       # Install Sway
-      - name: Install Sway
+      - name: Install sway
         run: |
-          sudo apt-get update
-          sudo apt-get install sway -y
-      
-      # Validate config
-      - name: Validate config
-        run: bash share/scripts/validate_sway_config.sh
+          sudo apt update
+          sudo apt install -y sway xvfb
+      - name: Run sway validation in Xvfb
+        run: |
+          Xvfb :99 & export DISPLAY=:99
+          bash share/scripts/validate_sway_config.sh
