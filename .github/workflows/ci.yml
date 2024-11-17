@@ -11,6 +11,7 @@ on:
 jobs:
   validate-config:
     container:
+      runs-on: ubuntu-latest  # Specify the environment
       image: alpine:latest
 
     steps:
