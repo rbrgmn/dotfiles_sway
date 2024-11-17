@@ -1,0 +1,91 @@
+#!/bin/env bash
+
+#    DATE: 2023-03-13
+#  AUTHOR: RBRGMN <roman.begman@tutanota.com>
+# LICENSE: AGPL3.0
+
+getTargetDirectory() {
+  test -f ${XDG_CONFIG_HOME:-~/.config}/user-dirs.dirs &&
+    . ${XDG_CONFIG_HOME:-~/.config}/user-dirs.dirs
+
+  echo ${XDG_SCREENSHOTS_DIR:-${XDG_PICTURES_DIR:-$HOME}}
+}
+
+SUBJECT=${1:-screen}
+FILE=${HOME}/Pictures/Screenshot_$(date +"%Y-%m-%d_%H-%M-%S").png
+
+notify() {
+  notify-send -t 3000 -a grimshot "$@"
+}
+
+notifyOk() {
+  TITLE=${2:-"Screenshot"}
+  MESSAGE=${1:-"OK"}
+  notify "$TITLE" "$MESSAGE" -i $ICON
+}
+
+die() {
+  MSG=${1:-Bye}
+  # notifyError "Error: $MSG"
+  exit 2
+}
+
+takeScreenshot() {
+  FILE=$1
+  GEOM=$2
+  OUTPUT=$3
+  if [ ! -z "$OUTPUT" ]; then
+    grim -o "$OUTPUT" "$FILE" || die "Unable to invoke grim"
+  elif [ -z "$GEOM" ]; then
+    grim "$FILE" || die "Unable to invoke grim"
+  else
+    grim -g "$GEOM" "$FILE" || die "Unable to invoke grim"
+  fi
+}
+
+if [ "$SUBJECT" = "area" ]; then
+  GEOM=$(slurp -d)
+  # Check if user exited slurp without selecting the area
+  if [ -z "$GEOM" ]; then
+    exit 1
+  fi
+  WHAT="Area"
+elif [ "$SUBJECT" = "active" ]; then
+  FOCUSED=$(swaymsg -t get_tree | jq -r 'recurse(.nodes[]?, .floating_nodes[]?) | select(.focused)')
+  GEOM=$(echo "$FOCUSED" | jq -r '.rect | "\(.x),\(.y) \(.width)x\(.height)"')
+  APP_ID=$(echo "$FOCUSED" | jq -r '.app_id')
+  WHAT="$APP_ID window"
+elif [ "$SUBJECT" = "screen" ]; then
+  GEOM=""
+  WHAT="Screen"
+elif [ "$SUBJECT" = "display" ]; then
+  GEOM=""
+  OUTPUT=$(swaymsg -t get_outputs | jq -r '.[] | select(.focused)' | jq -r '.name')
+  WHAT="$OUTPUT"
+elif [ "$SUBJECT" = "window" ]; then
+  GEOM=$(swaymsg -t get_tree | jq -r '.. | select(.pid? and .visible?) | .rect | "\(.x),\(.y) \(.width)x\(.height)"' | slurp)
+  # Check if user exited slurp without selecting the area
+  if [ -z "$GEOM" ]; then
+    exit 1
+  fi
+  WHAT="Window"
+else
+  die "Unknown subject to take a screen shot from" "$SUBJECT"
+fi
+
+if [ "$ACTION" = "copy" ]; then
+  takeScreenshot - "$GEOM" "$OUTPUT" | wl-copy --type image/png || die "Clipboard error"
+  notifyOk "$WHAT copied to buffer"
+else
+  if takeScreenshot "$FILE" "$GEOM" "$OUTPUT"; then
+    TITLE="Screenshot of $SUBJECT"
+    MESSAGE=$(basename "$FILE")
+    TMPD=$(mktemp -d)
+    ICON="$TMPD/$MESSAGE"
+    convert "$FILE" -resize 64x64 "$TMPD/$MESSAGE"
+    notifyOk "$MESSAGE" "$TITLE"
+    wl-copy -t image/png <$FILE
+  else
+    notifyError "Error taking screenshot with grim"
+  fi
+fi
