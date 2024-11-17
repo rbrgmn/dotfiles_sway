@@ -20,8 +20,8 @@ jobs:
       # Install Sway
       - name: Install Sway
         run: |
-          apt update
-          apt install sway -y
+          sudo apt-get update
+          sudo apt-get install sway -y
       
       # Validate config
       - name: Validate config
